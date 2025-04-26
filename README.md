@@ -22,6 +22,8 @@ It enables a doctor to:
 - **Flask-RESTful** – For building REST APIs
 - **Flask-Bcrypt** – Password hashing
 - **SQLite** – Lightweight development database
+- **JWT (JSON Web Tokens)** – For authentication
+- **python-dotenv** – For managing environment variables
 
 ---
 
@@ -71,6 +73,7 @@ flask db upgrade
 ### 5. Start the Server
 
 ```bash
+python3 app.py or 
 flask run
 ```
 
@@ -78,11 +81,28 @@ flask run
 
 ## 📖 API Endpoints
 
+### Authentication
+This API uses **JWT (JSON Web Tokens)** for authentication. To access protected routes, you must include a valid token in the `Authorization` header of your requests.
+
+#### How to Obtain a Token
+1. Use the `/login` endpoint to log in with valid credentials.
+2. The response will include a `token` that you can use for subsequent requests.
+
+#### Using the Token
+Include the token in the `Authorization` header of your requests:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+---
+
+### Endpoints
+
 | Method | Endpoint              | Description                             |
-|------------|-----------------------|-----------------------------------------|
+|--------|-----------------------|-----------------------------------------|
 | POST   | `/register-admin`     | Register the first user as admin        |
-| POST   | `/login`              | Login (Admin/Doctor)                    |
-| POST   | `/register-doctor`    | Admin registers a doctor                |
+| POST   | `/login`              | Login (Admin/Doctor) and get a token    |
+| POST   | `/register-doctor`    | Admin registers a doctor (protected)    |
 | POST   | `/clients`            | Doctor registers a new client           |
 | POST   | `/programs`           | Create a new health program             |
 | POST   | `/enrollments`        | Enroll a client in a program            |
@@ -91,11 +111,68 @@ flask run
 
 ---
 
+### Example Requests
+
+#### 1. Register Admin
+- **URL**: `/register-admin`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "username": "admin",
+    "email": "admin@example.com",
+    "password": "adminpassword"
+  }
+  ```
+
+#### 2. Login
+- **URL**: `/login`
+- **Method**: `POST`
+- **Body**:
+  ```json
+  {
+    "email": "admin@example.com",
+    "password": "adminpassword"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "message": "Login successful",
+    "token": "<JWT_TOKEN>",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "email": "admin@example.com",
+      "role": "ADMIN"
+    }
+  }
+  ```
+
+#### 3. Register Doctor (Protected)
+- **URL**: `/register-doctor`
+- **Method**: `POST`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
+  ```
+- **Body**:
+  ```json
+  {
+    "username": "doctor1",
+    "email": "doctor1@example.com",
+    "password": "doctorpassword"
+  }
+  ```
+
+---
+
 ## 🔒 Security Considerations
 
-- Passwords are hashed using bcrypt
-- Only doctors can access system features
-- Admin manually approves doctor accounts
+- Passwords are hashed using bcrypt.
+- JWT tokens are used for authentication.
+- Only admins can register doctors.
+- Tokens expire after 1 hour for security.
 
 ---
 
