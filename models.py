@@ -30,3 +30,18 @@ class User(db.Model, SerializerMixin):
     
     def __repr__(self):
         return f"<User {self.username} {self.email}>"
+    
+    
+# HealthProgram Model
+class HealthProgram(db.Model, SerializerMixin):
+    __tablename__ = 'health_programs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False, unique=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    creator = db.relationship('User', backref='programs')
+    
+    # exclude creator.programs to avoid recursion depth
+    serialize_rules = ('-creator.programs', '-creator.password_hash', '-creator.role',)
+    

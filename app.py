@@ -1,7 +1,7 @@
 from flask import Flask, request, make_response ;
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
-from models import db, bcrypt, User, UserRole
+from models import db, bcrypt, User, UserRole, HealthProgram
 from dotenv import load_dotenv
 import os
 import jwt
@@ -90,7 +90,7 @@ class RegisterAdmin(Resource):
         try:
             db.session.add(user)
             db.session.commit()
-            return make_response({"message" : "Admin registered successfully"}, 200)
+            return make_response({"message" : "Admin registered successfully"}, 201)
         except Exception as e:
             db.session.rollback()
             return make_response({"error" : str(e)}, 500)
@@ -171,12 +171,55 @@ class RegisterDoctor(Resource):
             }
         }, 201)
 
+
+# Health Programs Resource
+class Programs(Resource):
+    # POST a health program
+    @token_required
+    def post(self,current_user):
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error": "Only doctors can create health programs"}, 403)
         
+        data = request.json
+        name = data.get('name')
+        
+        if not name:
+            return make_response({"error" : "Program name required !!"}, 400)
+        
+        if HealthProgram.query.filter_by(name=name).first():
+            return make_response({"error" : "Program name already exists"}, 400)
+        
+        program = HealthProgram(
+            name = name,
+            created_by = current_user.id
+        )
+        
+        db.session.add(program)
+        db.session.commit()
+        
+        return make_response({
+            "message" : "Health program created successfully",
+            "program" : program.to_dict()
+        }, 201)
+       
+    # GET all health programs
+    @token_required
+    def get(self, current_user):
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error" : "Only doctors can view health programs"}, 403)
+        
+        programs = HealthProgram.query.all()
+        if not programs:
+            return make_response({"error" : "No health programs availlable yet"}, 404)
+        
+        programs_list = [program.to_dict() for program in programs]
+        return make_response(programs_list, 200)
         
         
 api.add_resource(RegisterAdmin, "/register-admin")
 api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
+api.add_resource(Programs, "/programs")
         
     
     
