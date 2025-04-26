@@ -37,15 +37,25 @@ def token_required(f):
             return make_response({"error": "Token is missing!"}, 401)
         
         try:
+            # Decode the token
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             current_user = User.query.get(data['user_id'])
+            
+            # Check if the user exists
+            if current_user is None:
+                return make_response({"error": "User not found!"}, 404)
+        
+        except jwt.ExpiredSignatureError:
+            return make_response({"error": "Token expired!"}, 401)
+        except jwt.InvalidTokenError:
+            return make_response({"error": "Invalid token!"}, 401)
         except Exception as e:
             return make_response({"error": str(e)}, 401)
         
-        return f(current_user, *args, **kwargs)
+        # Pass current_user as a keyword argument
+        return f(*args, current_user=current_user, **kwargs)
     
     return decorated
-
 
 
 # Routes
@@ -127,7 +137,9 @@ class Login(Resource):
 # RegisterDoctor Resource
 class RegisterDoctor(Resource):
     @token_required
-    def post(current_user, self):
+    def post(self, current_user):
+        if current_user.role != UserRole.ADMIN:
+            return make_response({"error": "Only admin can register doctors"}, 403)
         data = request.json
         username = data.get("username")
         email = data.get("email")
