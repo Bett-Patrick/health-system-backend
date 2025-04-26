@@ -2,17 +2,50 @@ from flask import Flask, request, make_response ;
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from models import db, bcrypt, User, UserRole
+from dotenv import load_dotenv
+import os
+import jwt
+import datetime
+from functools import wraps
 
+# Load environment variables
+load_dotenv()
 
+# flask app configuration
 app = Flask(__name__)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
+# Initialize the database and bcrypt
 migrate = Migrate(app, db)
 db.init_app(app)
 bcrypt.init_app(app)
 api = Api(app)
+
+
+
+# Decorator to check if the user is authenticated
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(" ")[1]
+        
+        if not token:
+            return make_response({"error": "Token is missing!"}, 401)
+        
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+            current_user = User.query.get(data['user_id'])
+        except Exception as e:
+            return make_response({"error": str(e)}, 401)
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
 
 
 # Routes
@@ -52,6 +85,8 @@ class RegisterAdmin(Resource):
             db.session.rollback()
             return make_response({"error" : str(e)}, 500)
         
+        
+
 # Login Resource
 class Login(Resource):
     def post(self):
@@ -69,8 +104,16 @@ class Login(Resource):
         if not user or not user.check_password(password):
             return make_response({"error" : "Invalid credentials"}, 401)
         
+        # Generate JWT token
+        token = jwt.encode({
+            "user_id": user.id,
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+        }, app.config['SECRET_KEY'], algorithm="HS256")
+        
+        # Return the token in the response
         return make_response({
             "message" : "Login successful",
+            "token" : token,
             "user" : {
                 "id" : user.id,
                 "username" : user.username,
@@ -83,31 +126,19 @@ class Login(Resource):
 
 # RegisterDoctor Resource
 class RegisterDoctor(Resource):
-    def post(self):
-        # Assuming user is already logged in, this part should be handled by authentication middleware
-        # For simplicity, we're assuming the admin is already identified (e.g., using token in header)
-        
+    @token_required
+    def post(current_user, self):
         data = request.json
-        admin_email = "admin@example.com"  # Admin email for now, could be retrieved from token
-
-        # Check if the logged-in user is an admin (dummy check for now)
-        user = User.query.filter_by(email=admin_email).first()
-        if not user or user.role != UserRole.ADMIN:
-            return make_response({"error": "Only an admin can register a doctor"}, 403)
-        
-        # Extract doctor details from the request
         username = data.get("username")
         email = data.get("email")
         password = data.get("password")
-        
+
         if not all([username, email, password]):
             return make_response({"error": "Missing required fields"}, 400)
 
-        # Check if the email already exists
         if User.query.filter_by(email=email).first():
             return make_response({"error": "Email already exists"}, 400)
-        
-        # Create the new doctor user
+
         doctor = User(
             username=username,
             email=email,
@@ -115,7 +146,6 @@ class RegisterDoctor(Resource):
         )
         doctor.set_password(password)
 
-        # Add the new doctor to the database
         db.session.add(doctor)
         db.session.commit()
 
