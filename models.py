@@ -144,3 +144,10 @@ class Enrollment(db.Model):
     program = db.relationship('HealthProgram', back_populates='enrollments')
     
     serialize_rules = ('-client.enrollments', '-program.enrollments',)
+    
+    @validates('status')
+    def validate_status(self, key, status):
+        allowed_statuses = ['active', 'completed', 'dropped']
+        if status not in allowed_statuses:
+            raise ValueError(f"Status must be one of {allowed_statuses}")
+        return status
