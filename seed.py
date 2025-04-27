@@ -1,5 +1,5 @@
 # faker.py
-from models import db, User, Client, HealthProgram, Enrollment  # Adjust if your models are elsewhere
+from models import db, User, Client, HealthProgram, Enrollment
 from faker import Faker
 from datetime import datetime, timedelta, timezone
 import random

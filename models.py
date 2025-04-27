@@ -63,6 +63,12 @@ class HealthProgram(db.Model, SerializerMixin):
     # exclude creator.programs to avoid recursion depth
     serialize_rules = ('-creator.programs', '-creator.password_hash', '-creator.role',)
     
+    @validates('name')
+    def validate_name(self, key, name):
+        if not name.strip():
+            raise ValueError("Program name cannot be empty")
+        return name
+    
 
 # Client Model
 class Client(db.Model, SerializerMixin):
