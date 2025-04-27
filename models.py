@@ -107,12 +107,26 @@ class Client(db.Model, SerializerMixin):
             raise ValueError("Date of birth must be in the past")
         return dob
 
+    @validates('full_name')
+    def validate_full_name(self, key, full_name):
+        if len(full_name.strip()) < 3:
+            raise ValueError("Full name must be at least 3 characters long")
+        if len(full_name.strip()) > 120:
+            raise ValueError("Full name cannot be longer than 120 characters")
+        return full_name
+    
+    @validates('address')
+    def validate_address(self, key, address):
+        if address and len(address.strip()) > 255:
+            raise ValueError("Address cannot be longer than 255 characters")
+        return address
+
     @validates('phone')
     def validate_phone(self, key, phone):
-        if phone and not phone.isdigit():
-            raise ValueError("Phone number must contain digits only")
-        if phone and (len(phone) < 7 or len(phone) > 15):
-            raise ValueError("Phone number must be between 7 and 15 digits")
+        if phone and not re.match(r"^\+?\d{1,3}?[-.\s]?\(?\d{1,4}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$", phone):
+            raise ValueError("Phone number format is invalid. Include country code.")
+        if phone and (len(phone) < 10 or len(phone) > 15):
+            raise ValueError("Phone number must be between 10 and 15 digits")
         return phone
     
     
