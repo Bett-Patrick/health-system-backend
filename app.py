@@ -1,7 +1,7 @@
 from flask import Flask, request, make_response ;
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
-from models import db, bcrypt, User, UserRole, HealthProgram, Client
+from models import db, bcrypt, User, UserRole, HealthProgram, Client, Enrollment
 from dotenv import load_dotenv
 import os
 import jwt
@@ -268,6 +268,47 @@ class Clients(Resource):
             return make_response({"error": "No clients available yet"}, 404)
         
         return [client.to_dict() for client in clients], 200
+    
+# EnrollClient Resource
+class EnrollClient(Resource):
+    @token_required
+    def post(self, current_user):
+        # Ensure only doctors can enroll clients
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error": "Only doctors can enroll clients in programs"}, 403)
+        
+        data = request.json
+        client_id = data.get('client_id')
+        program_ids = data.get('program_ids')
+
+        if not client_id or not program_ids:
+            return make_response({"error": "Client ID and Program IDs are required"}, 400)
+
+        # Fetch the client
+        client = Client.query.get(client_id)
+        if not client:
+            return make_response({"error": "Client not found"}, 404)
+
+        # Enroll the client in the specified programs
+        for program_id in program_ids:
+            program = HealthProgram.query.get(program_id)
+            if not program:
+                return make_response({"error": f"Program with ID {program_id} not found"}, 404)
+
+            # Check if the client is already enrolled in the program
+            existing_enrollment = Enrollment.query.filter_by(client_id=client_id, program_id=program_id).first()
+            if existing_enrollment:
+                # Skip if already enrolled
+                continue  
+
+            # Create a new enrollment
+            enrollment = Enrollment(client_id=client_id, program_id=program_id)
+            db.session.add(enrollment)
+
+        # Commit the changes
+        db.session.commit()
+
+        return make_response({"message": "Client enrolled in programs successfully"}, 201)
         
         
         
@@ -276,6 +317,7 @@ api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
 api.add_resource(Programs, "/programs")
 api.add_resource(Clients, "/clients")
+api.add_resource(EnrollClient, "/enroll-client")
         
     
     

@@ -56,8 +56,6 @@ class HealthProgram(db.Model, SerializerMixin):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     creator = db.relationship('User', backref='programs')
-    # Direct clients relationship
-    clients = db.relationship('Client', secondary='enrollments', back_populates='programs')
     enrollments = db.relationship('Enrollment', back_populates='program', lazy=True)
     
     # exclude creator.programs to avoid recursion depth
@@ -83,8 +81,6 @@ class Client(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    # Direct programs relationship
-    programs = db.relationship('HealthProgram', secondary='enrollments', back_populates='clients')
     enrollments = db.relationship('Enrollment', back_populates='client', lazy=True)
 
     serialize_rules = ('-enrollments',)

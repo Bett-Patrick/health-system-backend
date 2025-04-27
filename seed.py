@@ -1,4 +1,3 @@
-# faker.py
 from models import db, User, Client, HealthProgram, Enrollment
 from faker import Faker
 from datetime import datetime, timedelta, timezone
@@ -18,11 +17,14 @@ def clear_tables():
 
 def seed_users(n=5):
     users = []
-    for _ in range(n):
+    for i in range(n):
+        # Assign the admin role to the first user
+        role = 'ADMIN' if i == 0 else 'DOCTOR'
+        
         user = User(
             username=fake.user_name(),
             email=fake.email(),
-            role=random.choice(['DOCTOR', 'ADMIN'])  # Ensure roles are uppercase
+            role=role  # Assign 'ADMIN' to the first user, 'DOCTOR' to others
         )
         user.set_password('password123')  # default password for all
         users.append(user)
