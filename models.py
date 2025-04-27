@@ -1,3 +1,4 @@
+import re
 from flask_sqlalchemy import SQLAlchemy;
 from sqlalchemy_serializer import SerializerMixin;
 from flask_bcrypt import Bcrypt
@@ -28,6 +29,18 @@ class User(db.Model, SerializerMixin):
     # Check if the given password matches the stored password hash
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+    
+    @validates('email')
+    def validate_email(self, key, email):
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            raise ValueError("Invalid email format")
+        return email
+
+    @validates('password_hash')
+    def validate_password(self, key, password):
+        if len(password) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        return password
 
     
     def __repr__(self):
