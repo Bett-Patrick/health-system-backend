@@ -1,7 +1,7 @@
 from flask import Flask, request, make_response ;
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
-from models import db, bcrypt, User, UserRole, HealthProgram
+from models import db, bcrypt, User, UserRole, HealthProgram, Client
 from dotenv import load_dotenv
 import os
 import jwt
@@ -214,12 +214,68 @@ class Programs(Resource):
         
         programs_list = [program.to_dict() for program in programs]
         return make_response(programs_list, 200)
+    
+# Clients Resource
+class Clients(Resource):
+    @token_required
+    def post(self, current_user):
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error": "Only doctors can create clients"}, 403)
+        
+        data = request.json
+        full_name = data.get('full_name')
+        gender = data.get('gender')
+        phone = data.get('phone')
+        address = data.get('address')
+        date_of_birth = data.get('date_of_birth')
+        
+        # Validate required fields
+        if not all([full_name, gender, phone, date_of_birth]):
+            return make_response({"error": "Missing required fields"}, 400)
+        
+        try:
+            # Parse the date_of_birth field into a datetime.date object
+            date_of_birth = datetime.datetime.strptime(date_of_birth, "%Y-%m-%d").date()
+        except ValueError:
+            return make_response({"error": "Invalid date format. Expected format: YYYY-MM-DD"}, 400)
+        
+        try:
+            # create new client
+            client = Client(
+                full_name=full_name,
+                phone=phone,
+                address=address,
+                date_of_birth=date_of_birth,
+                gender=gender
+            )
+            
+            db.session.add(client)
+            db.session.commit()
+            
+            return make_response({
+                "message": "Patient created successfully",
+                "client": client.to_dict()
+            }, 201)
+        
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 400
+
+    def get(self):
+        clients = Client.query.all()
+        
+        if not clients:
+            return make_response({"error": "No clients available yet"}, 404)
+        
+        return [client.to_dict() for client in clients], 200
+        
         
         
 api.add_resource(RegisterAdmin, "/register-admin")
 api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
 api.add_resource(Programs, "/programs")
+api.add_resource(Clients, "/clients")
         
     
     

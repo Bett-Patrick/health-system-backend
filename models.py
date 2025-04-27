@@ -1,8 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy;
 from sqlalchemy_serializer import SerializerMixin;
 from flask_bcrypt import Bcrypt
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
 import enum
-
+from datetime import datetime, date, timezone
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
@@ -41,7 +43,71 @@ class HealthProgram(db.Model, SerializerMixin):
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     creator = db.relationship('User', backref='programs')
+    # Direct clients relationship
+    clients = db.relationship('Client', secondary='enrollments', back_populates='programs')
+    enrollments = db.relationship('Enrollment', back_populates='program', lazy=True)
     
     # exclude creator.programs to avoid recursion depth
     serialize_rules = ('-creator.programs', '-creator.password_hash', '-creator.role',)
     
+
+# Client Model
+class Client(db.Model, SerializerMixin):
+    __tablename__ = "clients"
+    
+    id = db.Column(db.Integer, primary_key=True, nullable=False)
+    full_name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(15), nullable=True)
+    address = db.Column(db.String(255), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=False)
+    gender = db.Column(db.String(10), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+
+    # Direct programs relationship
+    programs = db.relationship('HealthProgram', secondary='enrollments', back_populates='clients')
+    enrollments = db.relationship('Enrollment', back_populates='client', lazy=True)
+
+    serialize_rules = ('-enrollments',)
+
+    @hybrid_property
+    def age(self):
+        today = date.today()
+        return today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
+
+    @validates('gender')
+    def validate_gender(self, key, gender):
+        allowed = ['Male', 'Female', 'Other']
+        if gender not in allowed:
+            raise ValueError(f"Gender must be one of {allowed}")
+        return gender
+
+    @validates('date_of_birth')
+    def validate_date_of_birth(self, key, dob):
+        if dob >= date.today():
+            raise ValueError("Date of birth must be in the past")
+        return dob
+
+    @validates('phone')
+    def validate_phone(self, key, phone):
+        if phone and not phone.isdigit():
+            raise ValueError("Phone number must contain digits only")
+        if phone and (len(phone) < 7 or len(phone) > 15):
+            raise ValueError("Phone number must be between 7 and 15 digits")
+        return phone
+    
+    
+class Enrollment(db.Model):
+    __tablename__ = 'enrollments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    program_id = db.Column(db.Integer, db.ForeignKey('health_programs.id'), nullable=False)
+    enrolled_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    status = db.Column(db.String(20), default='active')  # active, completed, dropped
+
+    client = db.relationship('Client', back_populates='enrollments')
+    program = db.relationship('HealthProgram', back_populates='enrollments')
+    
+    serialize_rules = ('-client.enrollments', '-program.enrollments',)
