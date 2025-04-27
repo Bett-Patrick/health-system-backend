@@ -83,7 +83,8 @@ class Client(db.Model, SerializerMixin):
 
     enrollments = db.relationship('Enrollment', back_populates='client', lazy=True)
 
-    serialize_rules = ('-enrollments',)
+    # Include enrollments and their associated program in serialization
+    serialize_rules = ('-enrollments.client', 'enrollments.program',)
 
     @hybrid_property
     def age(self):
@@ -139,6 +140,18 @@ class Enrollment(db.Model):
     client = db.relationship('Client', back_populates='enrollments')
     program = db.relationship('HealthProgram', back_populates='enrollments')
     
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'client_id': self.client_id,
+            'program_id': self.program_id,
+            'client_name': self.client.full_name,  # Use `full_name` from `Client`
+            'program_name': self.program.name,  # Use `name` from `HealthProgram`
+            'enrolled_at': self.enrolled_at.isoformat(),
+            'status': self.status
+        }
+        
+    # Include program in serialization
     serialize_rules = ('-client.enrollments', '-program.enrollments',)
     
     @validates('status')

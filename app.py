@@ -261,14 +261,41 @@ class Clients(Resource):
             db.session.rollback()
             return {"error": str(e)}, 400
 
-    def get(self):
-        clients = Client.query.all()
+    # GET all clients
+    @token_required
+    def get(self, current_user):
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error": "Only doctors can view clients"}, 403)
         
+        # Fetch all clients
+        clients = Client.query.all()
         if not clients:
             return make_response({"error": "No clients available yet"}, 404)
         
-        return [client.to_dict() for client in clients], 200
-    
+        # Include enrollments in the response
+        clients_data = []
+        for client in clients:
+            client_data = client.to_dict()
+            client_data['enrollments'] = [enrollment.to_dict() for enrollment in client.enrollments]
+            clients_data.append(client_data)
+        
+        return make_response(clients_data, 200)
+   
+                
+                
+class ClientsById(Resource):
+    def get(self, id):
+        if id is None:
+            return make_response({"error": "Client ID is required"}, 400)
+        # Fetch client by ID
+        client = Client.query.get(id)
+        if not client:
+            return make_response({"error": f"Client with ID {id} not registered"}, 404)
+        
+        client_data = client.to_dict()
+        client_data['enrollments'] = [enrollment.to_dict() for enrollment in client.enrollments]
+        return make_response(client_data, 200) 
+
 # EnrollClient Resource
 class EnrollClient(Resource):
     @token_required
@@ -317,6 +344,7 @@ api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
 api.add_resource(Programs, "/programs")
 api.add_resource(Clients, "/clients")
+api.add_resource(ClientsById, "/clients/<int:id>")
 api.add_resource(EnrollClient, "/enroll-client")
         
     
