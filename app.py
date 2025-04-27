@@ -7,15 +7,19 @@ import os
 import jwt
 import datetime
 from functools import wraps
+from flask_cors import CORS
 
 # Load environment variables
 load_dotenv()
 
 # flask app configuration
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app = Flask(__name__, static_url_path='')
+CORS(app, origins=["http://localhost:3000", "https://yourfrontend.com"])
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.json.compact = False
 
 # Initialize the database and bcrypt
 migrate = Migrate(app, db)
@@ -117,7 +121,7 @@ class Login(Resource):
         # Generate JWT token
         token = jwt.encode({
             "user_id": user.id,
-            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
         }, app.config['SECRET_KEY'], algorithm="HS256")
         
         # Return the token in the response
@@ -350,5 +354,6 @@ api.add_resource(EnrollClient, "/enroll-client")
     
     
 
-if __name__ == '__main__':
-    app.run(port = 5555, debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
