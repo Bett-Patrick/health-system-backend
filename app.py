@@ -9,13 +9,13 @@ import datetime
 from functools import wraps
 from flask_cors import CORS
 
-# Load environment variables
-load_dotenv()
 
 # flask app configuration
 app = Flask(__name__, static_url_path='')
 CORS(app, origins=["http://localhost:5000", "http://localhost:3000" "https://yourfrontend.com"])
 
+# Load environment variables
+load_dotenv()
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -352,8 +352,8 @@ api.add_resource(ClientsById, "/clients/<int:id>")
 api.add_resource(EnrollClient, "/enroll-client")
         
     
-    
+DEBUG_MODE = os.getenv("DEBUG_MODE") == "True"    
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", debug=DEBUG_MODE, port=port)
