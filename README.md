@@ -1,5 +1,8 @@
 # 🏥 Health Information System – CEMA Internship Task
 
+## Deployed Link
+  #### [click here to visit health system backend link](#health-system-backend-production.up.railway.app)
+
 ## 📋 Overview
 
 This is a basic Health Information System built using **Flask**, designed to help doctors manage health programs and client data efficiently.  
@@ -21,7 +24,8 @@ It enables a doctor to:
 - **Flask-Migrate** – For database migrations
 - **Flask-RESTful** – For building REST APIs
 - **Flask-Bcrypt** – Password hashing
-- **SQLite** – Lightweight development database
+- **Postgresql** – Deployment database
+- **SQLite** – Lightweight development database 
 - **JWT (JSON Web Tokens)** – For authentication
 - **python-dotenv** – For managing environment variables
 
@@ -40,7 +44,7 @@ health-system-backend/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 GETting Started
 
 ### 1. Clone the Repository
 
@@ -74,7 +78,8 @@ flask db upgrade
 
 ```bash
 python3 app.py or 
-flask run
+flask run or
+gunicorn app:app
 ```
 
 ---
@@ -101,11 +106,11 @@ Authorization: Bearer <JWT_TOKEN>
 | Method | Endpoint              | Description                             |
 |--------|-----------------------|-----------------------------------------|
 | POST   | `/register-admin`     | Register the first user as admin        |
-| POST   | `/login`              | Login (Admin/Doctor) and get a token    |
+| POST   | `/login`              | Login (Admin/Doctor) and GET a token    |
 | POST   | `/register-doctor`    | Admin registers a doctor (protected)    |
 | POST   | `/clients`            | Doctor registers a new client           |
 | POST   | `/programs`           | Create a new health program             |
-| POST   | `/enrollments`        | Enroll a client in a program            |
+| POST   | `/enroll-client`        | Enroll a client in a program            |
 | GET    | `/clients`            | Search clients                          |
 | GET    | `/clients/<id>`       | View full client profile + enrollments  |
 
@@ -125,14 +130,14 @@ Authorization: Bearer <JWT_TOKEN>
   }
   ```
 
-#### 2. Login
+#### 2. Login (Admin & Doctors Only)
 - **URL**: `/login`
 - **Method**: `POST`
 - **Body**:
   ```json
   {
-    "email": "admin@example.com",
-    "password": "adminpassword"
+    "email": "suzannemartin@example.com",
+    "password": "password123"
   }
   ```
 - **Response**:
@@ -142,14 +147,14 @@ Authorization: Bearer <JWT_TOKEN>
     "token": "<JWT_TOKEN>",
     "user": {
       "id": 1,
-      "username": "admin",
-      "email": "admin@example.com",
+      "username": "patriciacarrillo",
+      "email": "suzannemartin@example.com",
       "role": "ADMIN"
     }
   }
   ```
 
-#### 3. Register Doctor (Protected)
+#### 3. Register Doctor (Admin Only)
 - **URL**: `/register-doctor`
 - **Method**: `POST`
 - **Headers**:
@@ -163,6 +168,67 @@ Authorization: Bearer <JWT_TOKEN>
     "email": "doctor1@example.com",
     "password": "doctorpassword"
   }
+  ```
+
+#### 4. Doctor Login (Doctors Only)
+- **URL**: `/login`
+- **Method**: `POST`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
+  ```
+- **Body**:
+  ```json
+  {
+    "email": "scottrichard@example.com",
+    "password": "password123"
+  }
+  ```
+
+#### 5. Create Health Programs (Doctors Only)
+- **URL**: `/programs`
+- **Method**: `POST`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
+  ```
+- **Body**:
+  ```json
+  {
+    "name": "Diabetes Management"
+  }
+  ```
+
+#### 6. Client Enrollment into Health Programs (Doctors Only)
+- **URL**: `/enroll-client`
+- **Method**: `POST`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
+  ```
+- **Body**:
+  ```json
+  {
+    "client_id": 1,
+    "program_ids": [1, 2]
+  }
+  ```
+
+
+#### 7. List All Clients (Doctors Only)
+- **URL**: `/clients`
+- **Method**: `GET`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
+  ```
+
+#### 8. GET Client Details by ID/Client profile(Doctors Only)
+- **URL**: `/clients/<id>`
+- **Method**: `GET`
+- **Headers**:
+  ```
+  Authorization: Bearer <JWT_TOKEN>
   ```
 
 ---

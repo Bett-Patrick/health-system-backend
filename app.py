@@ -14,7 +14,7 @@ load_dotenv()
 
 # flask app configuration
 app = Flask(__name__, static_url_path='')
-CORS(app, origins=["http://localhost:3000", "https://yourfrontend.com"])
+CORS(app, origins=["http://localhost:5000", "http://localhost:3000" "https://yourfrontend.com"])
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -355,5 +355,5 @@ api.add_resource(EnrollClient, "/enroll-client")
     
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
