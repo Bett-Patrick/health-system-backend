@@ -1,4 +1,4 @@
-from flask import Flask, request, make_response ;
+from flask import Flask, request, make_response
 from flask_migrate import Migrate
 from flask_restful import Resource,Api
 from models import db, bcrypt, User, UserRole, HealthProgram, Client, Enrollment
@@ -315,6 +315,10 @@ class EnrollClient(Resource):
         if not client_id or not program_ids:
             return make_response({"error": "Client ID and Program IDs are required"}, 400)
 
+        # Check if clients table is empty
+        clients = Client.query.all()
+        if not clients:
+            return make_response({"error": "No clients available yet"}, 404)
         # Fetch the client
         client = Client.query.get(client_id)
         if not client:

@@ -136,7 +136,7 @@ Authorization: Bearer <JWT_TOKEN>
 - **Body**:
   ```json
   {
-    "email": "suzannemartin@example.com",
+    "email": "tadams@example.com",
     "password": "password123"
   }
   ```
@@ -147,8 +147,8 @@ Authorization: Bearer <JWT_TOKEN>
     "token": "<JWT_TOKEN>",
     "user": {
       "id": 1,
-      "username": "patriciacarrillo",
-      "email": "suzannemartin@example.com",
+      "username": "whiteadam",
+      "email": "tadams@example.com",
       "role": "ADMIN"
     }
   }
@@ -180,8 +180,8 @@ Authorization: Bearer <JWT_TOKEN>
 - **Body**:
   ```json
   {
-    "email": "scottrichard@example.com",
-    "password": "password123"
+    "email": "doctor1@example.com",
+    "password": "doctorpassword"
   }
   ```
 
