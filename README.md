@@ -118,7 +118,16 @@ Authorization: Bearer <JWT_TOKEN>
 
 ### Example Requests
 
-#### 1. Register Admin
+## Base URL
+
+```
+https://health-system-backend-yqbu.onrender.com/
+```
+
+---
+
+### 1. Register Admin
+
 - **URL**: `/register-admin`
 - **Method**: `POST`
 - **Body**:
@@ -129,83 +138,276 @@ Authorization: Bearer <JWT_TOKEN>
     "password": "adminpassword"
   }
   ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Admin registered successfully"
+  }
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Admin already exists"
+  }
+  ```
 
-#### 2. Login (Admin & Doctors Only)
+---
+
+### 2. Login (Admin)
+
 - **URL**: `/login`
 - **Method**: `POST`
 - **Body**:
   ```json
   {
-    "email": "tadams@example.com",
-    "password": "password123"
+    "email": "admin@example.com",
+    "password": "adminpassword"
   }
   ```
-- **Response**:
+- **Success Response**:
   ```json
   {
     "message": "Login successful",
     "token": "<JWT_TOKEN>",
     "user": {
       "id": 1,
-      "username": "whiteadam",
-      "email": "tadams@example.com",
+      "username": "admin",
+      "email": "admin@example.com",
       "role": "ADMIN"
     }
   }
   ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Invalid credentials"
+  }
+  ```
 
-#### 3. Register Doctor (Admin Only)
+---
+
+
+### 3. Register Doctor (Admin Only)
+
 - **URL**: `/register-doctor`
 - **Method**: `POST`
 - **Headers**:
-  ```
-  Authorization: Bearer <JWT_TOKEN>
-  ```
+  - `Authorization: Bearer <JWT_TOKEN>`
 - **Body**:
   ```json
   {
-    "username": "doctor1",
-    "email": "doctor1@example.com",
-    "password": "doctorpassword"
+    "username": "doctor2",
+    "email": "doctor2@example.com",
+    "password": "password123"
   }
   ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Doctor registered successfully",
+    "doctor": {
+      "id": 2,
+      "username": "doctor2",
+      "email": "doctor2@example.com",
+      "role": "DOCTOR"
+    }
+  }
+  ```
+- **Error Responses**:
+  ```json
+  {
+    "error": "Only admin can register doctors"
+  }
+  ```
+  ```json
+  {
+    "error": "Email already exists"
+  }
+  ```
+---
 
-#### 4. Doctor Login (Doctors Only)
+### 4. Login (Doctor)
+
 - **URL**: `/login`
 - **Method**: `POST`
-- **Headers**:
-  ```
-  Authorization: Bearer <JWT_TOKEN>
-  ```
 - **Body**:
   ```json
   {
-    "email": "doctor1@example.com",
-    "password": "doctorpassword"
+    "email": "user@example.com",
+    "password": "password123"
   }
   ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Login successful",
+    "token": "<JWT_TOKEN>",
+    "user": {
+      "id": 1,
+      "username": "doctor1",
+      "email": "user@example.com",
+      "role": "DOCTOR"
+    }
+  }
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Invalid credentials"
+  }
+  ```
+---
 
-#### 5. Create Health Programs (Doctors Only)
+### 5. Create Health Program (Doctor Only)
+
 - **URL**: `/programs`
 - **Method**: `POST`
 - **Headers**:
-  ```
-  Authorization: Bearer <JWT_TOKEN>
-  ```
+  - `Authorization: Bearer <JWT_TOKEN>`
 - **Body**:
   ```json
   {
-    "name": "Diabetes Management"
+    "name": "Maternal Health"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Health program created successfully",
+    "program": {
+      "id": 1,
+      "name": "Maternal Health",
+      "created_by": 2
+    }
+  }
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Program name already exists"
   }
   ```
 
-#### 6. Client Enrollment into Health Programs (Doctors Only)
+---
+
+### 6. Get All Health Programs (Doctor Only)
+
+- **URL**: `/programs`
+- **Method**: `GET`
+- **Headers**:
+  - `Authorization: Bearer <JWT_TOKEN>`
+- **Success Response**:
+  ```json
+  [
+    {
+      "id": 1,
+      "name": "Maternal Health",
+      "created_by": 2
+    }
+  ]
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "No health programs availlable yet"
+  }
+  ```
+
+---
+
+### 7. Create Client (Doctor Only)
+
+- **URL**: `/clients`
+- **Method**: `POST`
+- **Headers**:
+  - `Authorization: Bearer <JWT_TOKEN>`
+- **Body**:
+  ```json
+  {
+    "full_name": "Jane Doe",
+    "gender": "Female",
+    "phone": "0712345678",
+    "address": "123 Nairobi St.",
+    "date_of_birth": "1990-05-15"
+  }
+  ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Patient created successfully",
+    "client": {
+      "id": 1,
+      "full_name": "Jane Doe",
+      "gender": "Female",
+      "phone": "0712345678",
+      "address": "123 Nairobi St.",
+      "date_of_birth": "1990-05-15"
+    }
+  }
+  ```
+
+---
+
+### 8. Get All Clients (Doctor Only)
+
+- **URL**: `/clients`
+- **Method**: `GET`
+- **Headers**:
+  - `Authorization: Bearer <JWT_TOKEN>`
+- **Success Response**:
+  ```json
+  [
+    {
+      "id": 1,
+      "full_name": "Jane Doe",
+      "gender": "Female",
+      "phone": "0712345678",
+      "address": "123 Nairobi St.",
+      "date_of_birth": "1990-05-15",
+      "enrollments": [
+        {
+          "program_id": 1,
+          "client_id": 1,
+          "date_enrolled": "2024-01-01"
+        }
+      ]
+    }
+  ]
+  ```
+
+---
+
+### 9. Get Client by ID
+
+- **URL**: `/clients/<id>`
+- **Method**: `GET`
+- **Success Response**:
+  ```json
+  {
+    "id": 1,
+    "full_name": "Jane Doe",
+    "gender": "Female",
+    "phone": "0712345678",
+    "address": "123 Nairobi St.",
+    "date_of_birth": "1990-05-15",
+    "enrollments": [...]
+  }
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Client with ID 5 not registered"
+  }
+  ```
+
+---
+
+### 10. Enroll Client in Programs (Doctor Only)
+
 - **URL**: `/enroll-client`
 - **Method**: `POST`
 - **Headers**:
-  ```
-  Authorization: Bearer <JWT_TOKEN>
-  ```
+  - `Authorization: Bearer <JWT_TOKEN>`
 - **Body**:
   ```json
   {
@@ -213,22 +415,28 @@ Authorization: Bearer <JWT_TOKEN>
     "program_ids": [1, 2]
   }
   ```
+- **Success Response**:
+  ```json
+  {
+    "message": "Client enrolled in programs successfully"
+  }
+  ```
+- **Error Response**:
+  ```json
+  {
+    "error": "Program with ID 2 not found"
+  }
+  ```
 
+---
 
-#### 7. List All Clients (Doctors Only)
-- **URL**: `/clients`
+### 11. Home Route
+
+- **URL**: `/`
 - **Method**: `GET`
-- **Headers**:
+- **Response**:
   ```
-  Authorization: Bearer <JWT_TOKEN>
-  ```
-
-#### 8. GET Client Details by ID/Client profile(Doctors Only)
-- **URL**: `/clients/<id>`
-- **Method**: `GET`
-- **Headers**:
-  ```
-  Authorization: Bearer <JWT_TOKEN>
+  Welcome to Health Information System(HIS) API
   ```
 
 ---
