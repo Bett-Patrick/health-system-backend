@@ -207,17 +207,29 @@ class Programs(Resource):
         }, 201)
        
     # GET all health programs
-    @token_required
-    def get(self, current_user):
-        if current_user.role != UserRole.DOCTOR:
-            return make_response({"error" : "Only doctors can view health programs"}, 403)
-        
-        programs = HealthProgram.query.all()
-        if not programs:
-            return make_response({"error" : "No health programs availlable yet"}, 404)
-        
-        programs_list = [program.to_dict() for program in programs]
-        return make_response(programs_list, 200)
+# GET all programs
+@token_required
+def get(self, current_user):
+    if current_user.role != UserRole.DOCTOR:
+        return make_response({"error": "Only doctors can view programs"}, 403)
+    
+    programs = HealthProgram.query.all()
+    if not programs:
+        return make_response({"error": "No programs available yet"}, 404)
+    
+    programs_data = []
+    for program in programs:
+        program_data = program.to_dict()
+        program_data['creator'] = {
+            "id": program.creator.id,
+            "username": program.creator.username,
+            "email": program.creator.email
+        }
+        program_data['enrollments'] = [enrollment.to_dict() for enrollment in program.enrollments]
+        programs_data.append(program_data)
+    
+    return make_response(programs_data, 200)
+
     
 # Clients Resource
 class Clients(Resource):
