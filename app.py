@@ -206,7 +206,6 @@ class Programs(Resource):
             "program" : program.to_dict()
         }, 201)
        
-    # GET all health programs
     # GET all programs
     @token_required
     def get(self, current_user):
@@ -229,6 +228,26 @@ class Programs(Resource):
             programs_data.append(program_data)
         
         return make_response(programs_data, 200)
+    
+# GET programs by ID
+class ProgramsById(Resource):
+    @token_required
+    def get(self, current_user, id):
+        if current_user.role != UserRole.DOCTOR:
+            return make_response({"error": "Only doctors can view programs"}, 403)
+        
+        if not isinstance(id, int) or id < 1:
+            return make_response({"error": "Invalid Program ID"}, 400)
+
+        program = HealthProgram.query.get(id)
+        if not program:
+            return make_response({"error": "Program not found"}, 404)
+
+        program_dict = program.to_dict()
+        program_dict['enrollments'] = [enrollment.to_dict() for enrollment in program.enrollments]
+
+        return make_response(program_dict, 200)
+
 
     
 # Clients Resource
@@ -363,6 +382,7 @@ api.add_resource(RegisterAdmin, "/register-admin")
 api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
 api.add_resource(Programs, "/programs")
+api.add_resource(ProgramsById, "/programs/<int:id>")
 api.add_resource(Clients, "/clients")
 api.add_resource(ClientsById, "/clients/<int:id>")
 api.add_resource(EnrollClient, "/enroll-client")
