@@ -12,7 +12,7 @@ from flask_cors import CORS
 
 # flask app configuration
 app = Flask(__name__, static_url_path='')
-CORS(app, origins=["http://localhost:5000", "http://localhost:3000" "https://yourfrontend.com"])
+CORS(app, origins=["http://localhost:5173","https://his-frontend.onrender.com"])
 
 # Load environment variables
 load_dotenv()
@@ -69,12 +69,18 @@ def token_required(f):
 def index():
     return make_response("<h1>Welcome to Health Information System(HIS) API</h1>", 200)
 
+class AdminCheck(Resource):
+    def get(self):
+        admin_exists = User.query.filter_by(role=UserRole.ADMIN).first() is not None
+        return make_response({"admin_exists": admin_exists}, 200)
+
+
 # RegisterAdmin Resource
 class RegisterAdmin(Resource):
     def post(self):
         if User.query.first():
             return make_response({"error":"Admin already exists"}, 403)
-        
+
         data = request.json
         # Extract data from the request
         username = data.get("username")
@@ -377,7 +383,7 @@ class EnrollClient(Resource):
         return make_response({"message": "Client enrolled in programs successfully"}, 201)
         
         
-        
+api.add_resource(AdminCheck, '/check-admin')
 api.add_resource(RegisterAdmin, "/register-admin")
 api.add_resource(Login, "/login")
 api.add_resource(RegisterDoctor, "/register-doctor")
